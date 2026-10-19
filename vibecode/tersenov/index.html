@@ -2,10 +2,16 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b2340">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:,">
 <title>Flappy Math — уворачивайся от формул!</title>
 <style>
   html, body {
     margin: 0;
+    padding: 0;
+    width: 100%;
     height: 100%;
     background: #1b2340;
     display: flex;
@@ -13,17 +19,29 @@
     justify-content: center;
     font-family: "Segoe UI", Arial, sans-serif;
     overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
   #game {
-    max-width: 100vw;
-    max-height: 100vh;
     width: auto;
     height: auto;
+    max-width: 100vw;
+    max-height: 100vh;
+    max-width: 100dvw;
+    max-height: 100dvh;
+    display: block;
+    outline: none;
+    border: none;
     box-shadow: 0 20px 60px rgba(0,0,0,.55);
     border-radius: 6px;
     touch-action: none;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
+  #game:focus { outline: none; }
 </style>
 </head>
 <body>
@@ -156,6 +174,7 @@ function addPipe(x) {
 }
 
 function flap() {
+  tryFullscreen();
   if (state.mode === "menu") { reset(); }
   else if (state.mode === "play") {
     bird.vy = -470;
@@ -173,6 +192,20 @@ function flap() {
   }
 }
 
+/* ---------- полноэкранный режим ---------- */
+let fsTried = false;
+function tryFullscreen() {
+  if (fsTried || document.fullscreenElement || document.webkitFullscreenElement) return;
+  fsTried = true;
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!req) return;
+  try {
+    const p = req.call(el, { navigationUI: "hide" });
+    if (p && p.catch) p.catch(() => { fsTried = false; });
+  } catch (e) { fsTried = false; }
+}
+
 /* ---------- ввод ---------- */
 window.addEventListener("keydown", e => {
   if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
@@ -182,6 +215,8 @@ window.addEventListener("keydown", e => {
   if (e.code === "KeyR" && state.mode === "dead") reset();
 });
 canvas.addEventListener("pointerdown", e => { e.preventDefault(); flap(); });
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+window.addEventListener("gesturestart", e => e.preventDefault());
 
 /* ---------- столкновения ---------- */
 function circleRect(cx, cy, r, rx, ry, rw, rh) {
@@ -719,6 +754,9 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+
+// отладочный доступ (для автоматических проверок)
+window.__flappy = { state, bird, die, reset, render, update };
 
 // начальная раскладка для меню
 addPipe(W + 100);
